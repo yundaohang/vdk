@@ -3,6 +3,7 @@ package webrtc
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"log"
 	"time"
@@ -90,6 +91,7 @@ func (element *Muxer) NewPeerConnection(configuration webrtc.Configuration) (*we
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i), webrtc.WithSettingEngine(s))
 	return api.NewPeerConnection(configuration)
 }
+
 func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string) (string, error) {
 	var WriteHeaderSuccess bool
 	if len(streams) == 0 {
@@ -286,6 +288,36 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		WritePacketSuccess = true
 		return nil
 	}
+}
+
+func (element *Muxer) AddIceCandidate(candidateStr string) error {
+	var (
+		candidate webrtc.ICECandidateInit
+	)
+	err := json.Unmarshal([]byte(candidateStr), &candidate)
+	if err != nil {
+		log.Println("AddIceCandidate param:%s, err:%v", candidateStr, err)
+		return err
+	}
+
+	if candidate.Candidate != "" {
+		log.Printf("AddIceCandidate:%s", candidateStr)
+		if err = element.pc.AddICECandidate(candidate); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (element *Muxer) BindIceCandidate(CandidateEvent func(candidate string)) {
+	element.pc.OnICECandidate(func(c *webrtc.ICECandidate) {
+		if c == nil {
+			return
+		}
+		outbound, _ := json.Marshal(c.ToJSON())
+		log.Printf("BindIceCandidate:%s", string(outbound))
+		CandidateEvent(string(outbound))
+	})
 }
 
 func (element *Muxer) Close() error {
