@@ -92,7 +92,7 @@ func (element *Muxer) NewPeerConnection(configuration webrtc.Configuration) (*we
 	return api.NewPeerConnection(configuration)
 }
 
-func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string) (string, error) {
+func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidateEvent func(candidate string)) (string, error) {
 	var WriteHeaderSuccess bool
 	if len(streams) == 0 {
 		return "", ErrorNotFound
@@ -187,6 +187,16 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string) (string,
 			element.Close()
 		}
 	})
+	if candidateEvent != nil {
+		peerConnection.OnICECandidate(func(c *webrtc.ICECandidate) {
+			if c == nil {
+				return
+			}
+			outbound, _ := json.Marshal(c.ToJSON())
+			log.Printf("------- box candidate:%s", string(outbound))
+			candidateEvent(string(outbound))
+		})
+	}
 	peerConnection.OnDataChannel(func(d *webrtc.DataChannel) {
 		d.OnMessage(func(msg webrtc.DataChannelMessage) {
 			element.ClientACK.Reset(5 * time.Second)
@@ -307,17 +317,6 @@ func (element *Muxer) AddIceCandidate(candidateStr string) error {
 		}
 	}
 	return nil
-}
-
-func (element *Muxer) BindIceCandidate(CandidateEvent func(candidate string)) {
-	element.pc.OnICECandidate(func(c *webrtc.ICECandidate) {
-		if c == nil {
-			return
-		}
-		outbound, _ := json.Marshal(c.ToJSON())
-		log.Printf("BindIceCandidate:%s", string(outbound))
-		CandidateEvent(string(outbound))
-	})
 }
 
 func (element *Muxer) Close() error {
