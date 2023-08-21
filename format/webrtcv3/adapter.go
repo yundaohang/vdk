@@ -183,8 +183,16 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 	}
 	peerConnection.OnICEConnectionStateChange(func(connectionState webrtc.ICEConnectionState) {
 		element.status = connectionState
+		log.Printf("------- box  state:%d", connectionState)
 		if connectionState == webrtc.ICEConnectionStateDisconnected {
+			log.Printf("------- box ICEConnectionStateDisconnected")
 			element.Close()
+		} else if connectionState == webrtc.ICEConnectionStateConnected {
+			log.Printf("------- box ICEConnectionStateConnected")
+		} else if connectionState == webrtc.ICEConnectionStateFailed {
+			log.Printf("------- box ICEConnectionStateFailed")
+		} else if connectionState == webrtc.ICEConnectionStateChecking {
+			log.Printf("------- box ICEConnectionStateChecking")
 		}
 	})
 	if candidateEvent != nil {
@@ -244,6 +252,7 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		return nil
 	}
 	if element.status != webrtc.ICEConnectionStateConnected {
+		log.Printf("------- element.status != webrtc.ICEConnectionStateConnected, 发送失败")
 		return nil
 	}
 	if tmp, ok := element.streams[pkt.Idx]; ok {
