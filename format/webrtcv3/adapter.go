@@ -252,6 +252,7 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		return nil
 	}
 	if element.status != webrtc.ICEConnectionStateConnected {
+		WritePacketSuccess = true
 		log.Printf("------- element.status != webrtc.ICEConnectionStateConnected, 发送失败")
 		return nil
 	}
