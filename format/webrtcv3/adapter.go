@@ -237,7 +237,7 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 }
 
 func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
-	log.Println("WritePacket", pkt.Time, element.status, webrtc.ICEConnectionStateConnected, pkt.Idx, element.streams[pkt.Idx])
+	//log.Println("WritePacket", pkt.Time, element.status, webrtc.ICEConnectionStateConnected, pkt.Idx, element.streams[pkt.Idx])
 	var WritePacketSuccess bool
 	defer func() {
 		if !WritePacketSuccess {
@@ -264,7 +264,7 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		}
 		switch tmp.codec.Type() {
 		case av.H264:
-			log.Printf("-------WritePacket 3 发送H264")
+			//log.Printf("-------WritePacket 3 发送H264")
 			nalus, _ := h264parser.SplitNALUs(pkt.Data)
 			for _, nalu := range nalus {
 				naltype := nalu[0] & 0x1f
