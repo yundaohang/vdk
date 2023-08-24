@@ -27,7 +27,7 @@ var (
 type Muxer struct {
 	streams   map[int8]*Stream
 	status    webrtc.ICEConnectionState
-	pcStatus  webrtc.PeerConnectionState
+	PcStatus  webrtc.PeerConnectionState
 	stop      bool
 	pc        *webrtc.PeerConnection
 	ClientACK *time.Timer
@@ -198,7 +198,7 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 		}
 	})
 	peerConnection.OnConnectionStateChange(func(connectionState webrtc.PeerConnectionState) {
-		element.pcStatus = connectionState
+		element.PcStatus = connectionState
 
 		log.Printf("------- box  state:%d", connectionState)
 		if connectionState == webrtc.PeerConnectionStateDisconnected {
@@ -261,27 +261,12 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 	var WritePacketSuccess bool
 	defer func() {
 		if !WritePacketSuccess {
+			log.Printf("##### WritePacketSuccess false")
 			element.Close()
 		}
 	}()
 	if element.stop {
 		return ErrorClientOffline
-	}
-	//if element.status == webrtc.ICEConnectionStateChecking {
-	//	WritePacketSuccess = true
-	//	log.Printf("-----WritePacket 1")
-	//	return nil
-	//}
-	if element.pcStatus != webrtc.PeerConnectionStateConnected {
-		WritePacketSuccess = true
-		log.Printf("-------WritePacket 2 element.pcStatus != webrtc.PeerConnectionStateConnected, 发送失败")
-		return nil
-	}
-
-	if !pkt.IsKeyFrame {
-		WritePacketSuccess = true
-		log.Printf("-------WritePacket 2 is not pkt.IsKeyFrame, 发送失败")
-		return nil
 	}
 
 	if tmp, ok := element.streams[pkt.Idx]; ok {
