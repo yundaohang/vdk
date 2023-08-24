@@ -278,6 +278,12 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		return nil
 	}
 
+	if !pkt.IsKeyFrame {
+		WritePacketSuccess = true
+		log.Printf("-------WritePacket 2 is not pkt.IsKeyFrame, 发送失败")
+		return nil
+	}
+
 	if tmp, ok := element.streams[pkt.Idx]; ok {
 		element.StreamACK.Reset(10 * time.Second)
 		if len(pkt.Data) < 5 {
