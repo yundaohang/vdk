@@ -107,7 +107,6 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 		SDP:  string(sdpB),
 	}
 	peerConnection, err := element.NewPeerConnection(webrtc.Configuration{
-		BundlePolicy: webrtc.BundlePolicyMaxBundle,
 		SDPSemantics: webrtc.SDPSemanticsUnifiedPlanWithFallback,
 	})
 	if err != nil {
@@ -125,12 +124,15 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 		var track *webrtc.TrackLocalStaticSample
 		if i2.Type().IsVideo() {
 			if i2.Type() == av.H264 {
+
 				track, err = webrtc.NewTrackLocalStaticSample(webrtc.RTPCodecCapability{
 					MimeType: webrtc.MimeTypeH264,
 				}, "pion-rtsp-video", "pion-video")
 				if err != nil {
 					return "", err
 				}
+				log.Printf("--WriteHeader H264 codec detected:%d, %+v, track:%v", i, i2, track.StreamID())
+
 				if rtpSender, err := peerConnection.AddTrack(track); err != nil {
 					return "", err
 				} else {
@@ -257,7 +259,10 @@ func (element *Muxer) WriteHeader(streams []av.CodecData, sdp64 string, candidat
 }
 
 func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
-	//log.Println("WritePacket", pkt.Time, element.status, webrtc.ICEConnectionStateConnected, pkt.Idx, element.streams[pkt.Idx])
+	log.Println("WritePacket", pkt.Time, element.status, element.PcStatus,
+		webrtc.ICEConnectionStateConnected,
+		pkt.Idx, element.streams[pkt.Idx].track.StreamID(), element.streams[pkt.Idx])
+
 	var WritePacketSuccess bool
 	defer func() {
 		if !WritePacketSuccess {
@@ -280,6 +285,7 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 			nalus, _ := h264parser.SplitNALUs(pkt.Data)
 			for _, nalu := range nalus {
 				naltype := nalu[0] & 0x1f
+				log.Printf("-------WritePacket 3 发送H264:%d", naltype)
 				if naltype == 5 {
 					codec := tmp.codec.(h264parser.CodecData)
 					err = tmp.track.WriteSample(media.Sample{Data: append([]byte{0, 0, 0, 1}, bytes.Join([][]byte{codec.SPS(), codec.PPS(), nalu}, []byte{0, 0, 0, 1})...), Duration: pkt.Duration})
@@ -313,6 +319,8 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 		default:
 			return ErrorCodecNotSupported
 		}
+
+		log.Printf("-------WritePacket 3 发送其他数据:%v", pkt.Time)
 		err = tmp.track.WriteSample(media.Sample{Data: pkt.Data, Duration: pkt.Duration})
 		if err == nil {
 			WritePacketSuccess = true
