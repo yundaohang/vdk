@@ -289,7 +289,7 @@ func (element *Muxer) WritePacket(pkt av.Packet) (err error) {
 			nalus, _ := h264parser.SplitNALUs(pkt.Data)
 			for _, nalu := range nalus {
 				naltype := nalu[0] & 0x1f
-				log.Printf("-------WritePacket 3 发送H264:%d", naltype)
+				//log.Printf("-------WritePacket 3 发送H264:%d", naltype)
 				if naltype == 5 {
 					codec := tmp.codec.(h264parser.CodecData)
 					err = tmp.track.WriteSample(media.Sample{Data: append([]byte{0, 0, 0, 1}, bytes.Join([][]byte{codec.SPS(), codec.PPS(), nalu}, []byte{0, 0, 0, 1})...), Duration: pkt.Duration})
