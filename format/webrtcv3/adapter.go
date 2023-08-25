@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"github.com/pion/ice/v2"
 	"log"
 	"time"
 
@@ -86,12 +85,15 @@ func (element *Muxer) NewPeerConnection(configuration webrtc.Configuration) (*we
 		s.SetEphemeralUDPPortRange(element.Options.PortMin, element.Options.PortMax)
 		log.Println("Set UDP ports to", element.Options.PortMin, "..", element.Options.PortMax)
 	}
-	//if len(element.Options.ICECandidates) > 0 {
-	//	//s.SetNAT1To1IPs(element.Options.ICECandidates, webrtc.ICECandidateTypeSrflx)
-	//	log.Println("Set ICECandidates", element.Options.ICECandidates)
-	//}
+	if len(element.Options.ICECandidates) > 0 {
+		ips := []string{
+			"47.97.220.60",
+		}
+		s.SetNAT1To1IPs(ips, webrtc.ICECandidateTypeHost)
+		log.Println("Set ICECandidates", element.Options.ICECandidates)
+	}
 
-	s.SetICEMulticastDNSMode(ice.MulticastDNSModeDisabled)
+	//s.SetICEMulticastDNSMode(ice.MulticastDNSModeDisabled)
 
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i), webrtc.WithSettingEngine(s))
 	return api.NewPeerConnection(configuration)
