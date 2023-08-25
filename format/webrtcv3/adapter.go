@@ -86,7 +86,7 @@ func (element *Muxer) NewPeerConnection(configuration webrtc.Configuration) (*we
 		log.Println("Set UDP ports to", element.Options.PortMin, "..", element.Options.PortMax)
 	}
 	if len(element.Options.ICECandidates) > 0 {
-		s.SetNAT1To1IPs(element.Options.ICECandidates, webrtc.ICECandidateTypeHost)
+		s.SetNAT1To1IPs(element.Options.ICECandidates, webrtc.ICECandidateTypeSrflx)
 		log.Println("Set ICECandidates", element.Options.ICECandidates)
 	}
 	api := webrtc.NewAPI(webrtc.WithMediaEngine(m), webrtc.WithInterceptorRegistry(i), webrtc.WithSettingEngine(s))
